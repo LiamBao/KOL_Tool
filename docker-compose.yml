@@ -1,0 +1,56 @@
+
+version: '2'
+services:
+  mysql:
+    image: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: cic
+      MYSQL_DATABASE: cic_kol_tool
+      MYSQL_USER: cic
+      MYSQL_PASSWORD: cic
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+  backend:
+    image: cic/kol_tool
+    volumes:
+      - ".:/src:rw"
+    ports:
+      - "9000:9000"
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - mongo
+    command: >
+      sh -c '
+      if test -d node_modules;
+      then
+        echo node_modules_exists ;
+      else
+        cp -a /tmp/node_modules /src;
+      fi &&
+      npm run server
+      '
+    links:
+      - mongo
+      - mysql
+  frontend:
+    image: cic/kol_tool
+    volumes:
+      - ".:/src:rw"
+    ports:
+      - "9001:9001"
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - backend
+    command: >
+      sh -c '
+      npm run client
+      '
+    links:
+      - backend
